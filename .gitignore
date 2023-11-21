@@ -8,6 +8,5 @@ hists/*
 plots/*
 *.code-workspace
 *.pyc
-*.json
 *.pkl
 .DS_Store
