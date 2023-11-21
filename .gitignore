@@ -1,0 +1,13 @@
+AN*
+preprocessing/generateSignal/EXO-MCsampleProductions/
+preprocessing/generateSignal/genproductions/
+preprocessing/processMiniAOD/cache/
+preprocessing/processMiniAOD/CMSSW*
+test/
+hists/*
+plots/*
+*.code-workspace
+*.pyc
+*.json
+*.pkl
+
