@@ -22,10 +22,11 @@ hist_dir = f'{top_dir}/hists'
 
 # Define axes
 dataset_axis = bh.axis.StrCategory([], name='dataset', label='Dataset', growth=True)
+selection_axis = bh.axis.StrCategory([], name='selection', label='Selection', growth=True)
 
 # Diphoton
 diphoton_energy_axis = bh.axis.Regular(256, 0, 4000, name='diphoton_energy', label='diphoton energy [GeV]')
-diphoton_mass_axis = bh.axis.Regular(512, 0, 80, name='diphoton_mass', label='diphoton mass [GeV]')
+diphoton_mass_axis = bh.axis.Regular(1024, 0, 80, name='diphoton_mass', label='diphoton mass [GeV]')
 diphoton_moe_axis = bh.axis.Regular(128, 0, 0.05, name='diphoton_moe', label='Diphoton $m/E$')
 diphoton_pt_axis = bh.axis.Regular(256, 0, 4000, name='diphoton_pt', label='Diphoton $p_T$ [GeV]')
 diphoton_eta_axis = bh.axis.Regular(32, -1.5, 1.5, name='diphoton_eta', label='Diphoton $\eta$')
@@ -43,8 +44,17 @@ delta_r_axis = bh.axis.Regular(128, 0, 7.5, name='delta_r', label='$\Delta R$')
 delta_eta_axis = bh.axis.Regular(64, 0, 4, name='delta_eta', label='$| \Delta \eta |$')
 ket_frac_axis = bh.axis.Regular(128, 0, 1, name='ket_frac', label='$| \\vec{p_{T_{\gamma}}} + \\vec{p_{T_{\gamma \gamma}}}| / \sum_\gamma{E}$')
 energy_ratio_axis = bh.axis.Regular(128, 0, 2, name='energy_ratio', label='$E_{diphoton}/E_{\gamma}$')
-diphoton_moe_axis = bh.axis.Regular(128, 0, 0.1, name='moe', label='$2m_{2\gamma}/E_{3\gamma}$')
-triphoton_mass_axis = bh.axis.Regular(512, 0, 4000, name='triphoton_mass', label='$m_{3\gamma} [GeV]$')
+alpha_axis = bh.axis.Regular(512, 0, 1, name='alpha', label='$m_{diphoton}/m_{triphoton}$')
+triphoton_mass_axis = bh.axis.Regular(2048, 0, 4000, name='triphoton_mass', label='$m_{3\gamma} [GeV]$')
+
+def get_axis(name, bins):
+    if name == 'triphoton_mass':
+        return bh.axis.Regular(bins, 0, 4000, name=name, label='$m_{3\gamma} [GeV]$')
+    elif name == 'alpha':
+        return bh.axis.Regular(bins, 0, 1, name=name, label='$m_{diphoton}/m_{triphoton}$')
+    elif name == 'diphoton_mass':
+        return bh.axis.Regular(bins, 0, 80, name=name, label='diphoton mass [GeV]')
+
 
 # Event
 pf_met_axis = bh.axis.Regular(128, 0, 500, name='pf_met', label='PF MET [GeV]')
@@ -94,9 +104,9 @@ def get_hists(dType,
     tree = '/flattener/tree'
 
     if dType == 'signal':
-        n_workers = 4
+        n_workers = 2
     else:
-        n_workers = 64
+        n_workers = 32
 
     executor = processor.futures_executor(workers=n_workers) #64 max
     #executor = processor.iterative_executor()
