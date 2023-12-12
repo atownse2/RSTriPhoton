@@ -6,14 +6,12 @@ import numpy as np
 
 import re
 import json
+import yaml
 
-script_dir = os.path.dirname(os.path.abspath(__file__))
-top_dir = os.path.dirname(os.path.dirname(script_dir))
+top_dir = '/afs/crc.nd.edu/user/a/atownse2/Public/RSTriPhoton'
+meta_dir = f'{top_dir}/analysis/metadata'
 
-# Tuple version
-current_tuple_version = 'FlatAODv4'
-
-
+condor_dir = '/scratch365/atownse2/condor'
 # Metadata
 lumi_dict = { '2016': 35.92,
               '2017': 41.53,
@@ -38,10 +36,14 @@ data_filetags = {'2016' : 'DoubleEG',
 signal_filetag = 'BkkToGRadionToGGG'
 
 # Mass Grid
-BKK_MASS = [140, 160, 180, 250, 500, 1000, 3000]
+BKK_MASS = [180, 250, 500, 1000, 3000] # Removed 140, 160
 MOES = [0.04, 0.02, 0.01, 0.005, 0.0025]
 
 mass_grid = [ (M_BKK, np.round(MOE*(M_BKK/2), decimals=4)) for M_BKK in BKK_MASS for MOE in MOES]
+
+# Adding more mass points but don't want to break workflows that use the old mass grid
+new_BKK_MASS = [180, 250, 500, 1000, 1500, 2000, 2500, 3000]
+new_mass_grid = [ (M_BKK, np.round(MOE*(M_BKK/2), decimals=4)) for M_BKK in new_BKK_MASS for MOE in MOES]
 
 # XRootD redirectors
 hadoop_redirector = "root://deepthought.crc.nd.edu/"
@@ -49,6 +51,36 @@ nd_redirector = "root://ndcms.crc.nd.edu/"
 fnal_redirector = "root://cmsxrootd.fnal.gov/"
 
 # Metadata functions
+tuple_versions = {'MiniAOD': 'MiniAOD',
+                 'current': 'FlatAODv4',
+                 'new': 'FlatAODv5',
+                 'old': 'FlatAODv3',}
+
+def get_tuple_version(version='current'):
+    if version in tuple_versions:
+        return tuple_versions[version]
+    else:
+        raise ValueError(f'Invalid version {version}')
+
+def get_tuple_dir(group,
+                  tuple_version=get_tuple_version(),
+                  year='2018'):
+    """
+    Group: data, mc, or signal
+    Tuple cycle: new, current, old, or MiniAOD
+    """
+    return f'/hadoop/store/user/atownse2/RSTriPhoton/{group}/{year}/{tuple_version}/'      
+
+def get_mass_grid(version='current'):
+    if version == 'current':
+        return mass_grid
+    elif version == 'new':
+        return new_mass_grid
+    elif version == 'old':
+        return mass_grid
+    else:
+        raise ValueError(f'Invalid version {version}')
+
 def isMC(dataset):
     '''Returns true if the dataset is MC'''
     if 'data' in dataset:
@@ -73,7 +105,7 @@ def get_xs(dataset):
 
 def get_trigger_index(trigger, era):
     """Reads triggers/trigger_names_<era>.txt and returns the index of the trigger"""
-    with open(f'{script_dir}/triggers/triggerNames_{era}.txt', 'r') as tfile:
+    with open(f'{meta_dir}/triggers/triggerNames_{era}.txt', 'r') as tfile:
         trigger_names = tfile.read().splitlines()
     return trigger_names.index(trigger)
 
@@ -148,7 +180,7 @@ def m_moe_to_m_m(m_moe):
 
 def get_mass_point(fragment):
     '''Parse the mass point from the fragment'''
-    if 'M1' not in fragment or 'R' not in fragment:
+    if 'M' not in fragment or 'R0' not in fragment:
         raise ValueError('Fragment does not contain mass point')
     else:
         M1 = float(re.search(r'M1-(\d+p\d+|\d+)', fragment).group(1).replace('p', '.'))
@@ -176,15 +208,22 @@ def get_all_signal_filetags(era='2018', in_mass_grid=True):
     return [get_signal_filetag(point) for point in get_all_signal_points(era=era, in_mass_grid=in_mass_grid)]
 
 # General I/O functions
-def get_tuple_dir(sample_dir, tuple_version, year='2018'):
-    return f'/hadoop/store/user/atownse2/RSTriPhoton/{sample_dir}/{year}/{tuple_version}'      
 
-def get_datasets(dType,
+def get_das_datasets(group):
+
+    with open('../metadata/samples.yml') as f:
+        sample_info = yaml.load(f, Loader=yaml.FullLoader)
+
+    datasets = [ key for key, value in sample_info['samples'].items() if value['group']==group]
+    return datasets
+
+def get_filesets(dType,
                 year='2018',
-                tuple_version=current_tuple_version,
+                tuple_version=get_tuple_version(),
                 signal_in_mass_grid=True,
                 useXRD=False, redirector="root://deepthought.crc.nd.edu/"):
     '''Returns a dictionary of datasets and their filelists'''
+
     datasets = {}
     if dType == 'signal':
         if signal_in_mass_grid:
@@ -193,10 +232,10 @@ def get_datasets(dType,
             mass_points = get_all_signal_points(year)
         for mass_point in mass_points:
             filetag = get_signal_filetag(mass_point)
-            datasets[filetag] = {'files': get_filelist(filetag, tuple_version, year=year, useXRD=useXRD, redirector=redirector)}
+            datasets[filetag] = {'files': get_filelist('signal', subset=filetag, tuple_version=tuple_version, year=year, useXRD=useXRD, redirector=redirector)}
     elif dType == 'GJets':
         for dataset in mc_subsets['GJets']:
-            datasets[dataset] = {'files': get_filelist(dataset, tuple_version, year=year, useXRD=useXRD, redirector=redirector)}
+            datasets[dataset] = {'files': get_filelist('mc', subset=dataset, tuple_version=tuple_version, year=year, useXRD=useXRD, redirector=redirector)}
     elif dType == 'data':
         datasets['data'] = {'files': get_filelist('data', tuple_version, year=year, useXRD=useXRD, redirector=redirector)}
     else:
@@ -204,31 +243,25 @@ def get_datasets(dType,
 
     return datasets
 
-def get_filelist(filetag,
-                tuple_version=current_tuple_version,
+def get_filelist(group, subset=None,
+                tuple_version=get_tuple_version(),
                 signal_point = None,
                 year='2018',
                 useXRD=False, redirector="root://deepthought.crc.nd.edu/"):
     
-    if signal_filetag in filetag or 'signal' in filetag:
-        sample_dir = 'signal'
-    elif filetag == 'data' or filetag in data_filetags.values():
-        sample_dir = 'data'
-        filetag = data_filetags[year]
-    else:
-        sample_dir = 'mc'
+    '''Returns a list of files for the given filetag'''
 
-    dir = get_tuple_dir(sample_dir, tuple_version, year=year)
+    dir = get_tuple_dir(group, tuple_version=tuple_version, year=year)
 
-    if filetag == 'signal':
-        filetag = get_signal_filetag(signal_point)
+    filelist = [f for f in os.listdir(dir)]
 
-    filelist = [f for f in os.listdir(dir) if filetag in f]
+    if subset is not None:
+        filelist = [f for f in filelist if subset in f]
 
     if useXRD:
         dir = dir.replace('/hadoop', redirector)
 
-    return [f'{dir}/{f}' for f in filelist]
+    return [dir+f for f in filelist]
 
 if __name__ == '__main__':
     #Testing

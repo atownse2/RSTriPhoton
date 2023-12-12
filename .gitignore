@@ -1,6 +1,6 @@
 AN*
 preprocessing/generateSignal/EXO-MCsampleProductions/
-preprocessing/generateSignal/genproductions/
+*genproductions/
 preprocessing/processMiniAOD/cache/
 preprocessing/processMiniAOD/CMSSW*
 test/
@@ -9,4 +9,10 @@ plots/*
 *.code-workspace
 *.pyc
 *.pkl
+*.pkl.gz
 .DS_Store
+*CMSSW*
+*.parquet
+*.root
+*.csv
+*.json
