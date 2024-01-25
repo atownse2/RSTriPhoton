@@ -16,7 +16,7 @@ meta_dir = f'{top_dir}/analysis/metadata'
 hadoop_redirector = "root://deepthought.crc.nd.edu/"
 nd_redirector = "root://ndcms.crc.nd.edu/"
 
-tuple_version = 'FlatAODv3'
+tuple_version = 'NanoAODv9'
 
 # General I/O functions
 def get_sample_info():
@@ -52,6 +52,19 @@ def xrd_list_dir(directory, redirector):
         raise RuntimeError(f"Failed to list directory {directory} on {redirector}, make sure you have a proxy.")
     return [f.name for f in listing]
 
+def das_list_dir(dataset):
+    filelist_dir = f'{top_dir}/analysis/cache/filelists'
+    if not os.path.exists(filelist_dir):
+        os.makedirs(filelist_dir)
+
+    cache = f'{filelist_dir}/{dataset[1:].replace("/","_")}.txt'
+    if not os.path.exists(cache):
+        os.system(f'dasgoclient -query="file dataset={dataset}" > {cache}')
+    
+    with open(cache) as f:
+        return f.read().split('\n')[:-1]
+
+
 def list_dir(access):
     '''Returns a list of files in the given directory'''
 
@@ -63,7 +76,7 @@ def list_dir(access):
     elif access_method == 'hadoop':
         return xrd_list_dir(file_dir.replace("/hadoop",""), hadoop_redirector)
     elif access_method == 'das':
-        return xrd_list_dir(path, nd_redirector)
+        return das_list_dir(path)
 
 def get_filelist(
         dataset_or_dType,
