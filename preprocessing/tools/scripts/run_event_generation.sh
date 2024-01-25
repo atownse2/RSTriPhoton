@@ -4,11 +4,13 @@ export SCRAM_ARCH=slc7_amd64_gcc10
 
 #### Arguments
 
-gridpath=$1
-outpath=$2
-year=$3
-nevents=$4
-saveAOD=$5
+releasedir=$1
+tmpdir=$2
+gridpath=$3
+outpath=$4
+year=$5
+nevents=$6
+saveAOD=$7
 
 outputdir=$(dirname "$outpath")
 if [ ! -d "$outputdir" ]
@@ -19,44 +21,30 @@ fi
 
 
 outfilename=$(basename "$outpath")
-fragment=${outfilename%.*}
+jobname=${outfilename%.*}
 
-echo "Running event generation for fragment $fragment"
+echo "Running event generation for $jobname"
 echo "Output file name: $outfilename"
 
 
-tmpdir=/scratch365/atownse2/tmp/${fragment}
-
-if [ -d $tmpdir ]
+wkdir=$tmpdir/$jobname
+if [ -d $wkdir ]
 then
   echo "Removing existing temporary directory."
-  rm -rf $tmpdir
-  mkdir $tmpdir
+  rm -rf $wkdir
+  mkdir $wkdir
 else
   echo "Creating temporary directory"
-  mkdir $tmpdir
+  mkdir $wkdir
 fi
 
 #### File I/O
-wmLHEGENfilepath=${tmpdir}/wmLHEGEN.root
-SIMfilepath=${tmpdir}/SIM.root
-DIGIfilepath=${tmpdir}/DIGIPremix.root
-HLTfilepath=${tmpdir}/HLT.root
-RECOfilepath=${tmpdir}/RECO.root
-MINIfilepath=${tmpdir}/MINI.root
-
-#### Map era = 2018 to era_tag = RunIISummer20UL18
-declare -A era_tags=(
-  ["2018"]="RunIISummer20UL18"
-  ["2017"]="RunIISummer20UL17"
-  ["2016"]="RunIISummer20UL16"
-  ["2016APV"]="RunIISummer20UL16APV"
-)
-era_tag=${era_tags[$year]}
-
-
-#### Configuration
-releasedir=/afs/crc.nd.edu/user/a/atownse2/Public/RSTriPhoton/preprocessing/tools/EXO-MCsampleProductions/FullSimulation/${era_tag} 
+wmLHEGENfilepath=${wkdir}/wmLHEGEN.root
+SIMfilepath=${wkdir}/SIM.root
+DIGIfilepath=${wkdir}/DIGIPremix.root
+HLTfilepath=${wkdir}/HLT.root
+RECOfilepath=${wkdir}/RECO.root
+MINIfilepath=${wkdir}/MINI.root
 
 GEN=$releasedir/wmLHEGEN__CMSSW_10_6_22/src
 SIM=$releasedir/SIM__CMSSW_10_6_17_patch1/src
@@ -70,7 +58,7 @@ echo "Starting GEN to MiniAOD steps"
 echo "GEN step"
 cd $GEN
 eval `scramv1 runtime -sh`
-cd $tmpdir
+cd $wkdir
 
 cmsRun $GEN/wmLHEGEN_step.py ${gridpath} ${nevents} ${wmLHEGENfilepath}
 
@@ -120,9 +108,9 @@ cmsRun MiniAOD_step.py $RECOfilepath $MINIfilepath
 rm $RECOfilepath
 
 
-echo "Done generating events for fragment $fragment"
+echo "Done generating events for $jobname"
 echo "Moving output file to hadoop"
 mv $MINIfilepath $outpath
 
 echo "Cleaning up, removing temporary directory"
-rm -rf $tmpdir
+rm -rf $wkdir

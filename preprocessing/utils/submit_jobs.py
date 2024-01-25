@@ -1,10 +1,20 @@
 import os
 
-import htcondor
+USER=os.environ['USER']
 
+condordir = f'/scratch365/{USER}/RSTriPhoton/condor'
 
-condordir = '/scratch365/atownse2/condor'
-def submit_batch(executable, arguments, job_name):
+def check_condor_dir():
+    if not os.path.isdir(condordir):
+        os.makedirs(condordir)
+        os.makedirs(f'{condordir}/out')
+        os.makedirs(f'{condordir}/err')
+        os.makedirs(f'{condordir}/log')
+
+def submit_condor(executable, arguments, job_name):
+    '''Submit a job to condor'''
+    check_condor_dir()
+    import htcondor
     make_events = htcondor.Submit({
         "executable": executable,
         "arguments": arguments,

@@ -1,0 +1,105 @@
+GJets:
+  GJets_HT-100To200_2018:
+    FlatAODv3: hadoop:/hadoop/store/user/atownse2/RSTriPhoton/GJets/FlatAODv3/GJets_HT-100To200_2018_FlatAODv3
+    MiniAOD: das:/GJets_HT-100To200_TuneCP5_13TeV-madgraphMLM-pythia8/RunIISummer20UL18MiniAODv2-4cores5k_106X_upgrade2018_realistic_v16_L1v1-v2/MINIAODSIM
+  GJets_HT-200To400_2018:
+    FlatAODv3: hadoop:/hadoop/store/user/atownse2/RSTriPhoton/GJets/FlatAODv3/GJets_HT-200To400_2018_FlatAODv3
+    MiniAOD: das:/GJets_HT-200To400_TuneCP5_13TeV-madgraphMLM-pythia8/RunIISummer20UL18MiniAODv2-106X_upgrade2018_realistic_v16_L1v1-v2/MINIAODSIM
+  GJets_HT-400To600_2018:
+    FlatAODv3: hadoop:/hadoop/store/user/atownse2/RSTriPhoton/GJets/FlatAODv3/GJets_HT-400To600_2018_FlatAODv3
+    MiniAOD: das:/GJets_HT-400To600_TuneCP5_13TeV-madgraphMLM-pythia8/RunIISummer20UL18MiniAODv2-106X_upgrade2018_realistic_v16_L1v1-v2/MINIAODSIM
+  GJets_HT-40To100_2018:
+    FlatAODv3: hadoop:/hadoop/store/user/atownse2/RSTriPhoton/GJets/FlatAODv3/GJets_HT-40To100_2018_FlatAODv3
+    MiniAOD: das:/GJets_HT-40To100_TuneCP5_13TeV-madgraphMLM-pythia8/RunIISummer20UL18MiniAODv2-106X_upgrade2018_realistic_v16_L1v1-v2/MINIAODSIM
+  GJets_HT-600ToInf_2018:
+    FlatAODv3: hadoop:/hadoop/store/user/atownse2/RSTriPhoton/GJets/FlatAODv3/GJets_HT-600ToInf_2018_FlatAODv3
+    MiniAOD: das:/GJets_HT-600ToInf_TuneCP5_13TeV-madgraphMLM-pythia8/RunIISummer20UL18MiniAODv2-106X_upgrade2018_realistic_v16_L1v1-v2/MINIAODSIM
+data:
+  EGamma_2018A:
+    FlatAODv3: hadoop:/hadoop/store/user/atownse2/RSTriPhoton/data/FlatAODv3/EGamma_2018A_FlatAODv3
+    MiniAOD: das:/EGamma/Run2018A-UL2018_MiniAODv2-v1/MINIAOD
+  EGamma_2018B:
+    FlatAODv3: hadoop:/hadoop/store/user/atownse2/RSTriPhoton/data/FlatAODv3/EGamma_2018B_FlatAODv3
+    MiniAOD: das:/EGamma/Run2018B-UL2018_MiniAODv2-v1/MINIAOD
+  EGamma_2018C:
+    FlatAODv3: hadoop:/hadoop/store/user/atownse2/RSTriPhoton/data/FlatAODv3/EGamma_2018C_FlatAODv3
+    MiniAOD: das:/EGamma/Run2018C-UL2018_MiniAODv2-v1/MINIAOD
+  EGamma_2018D:
+    FlatAODv3: hadoop:/hadoop/store/user/atownse2/RSTriPhoton/data/FlatAODv3/EGamma_2018D_FlatAODv3
+    MiniAOD: das:/EGamma/Run2018D-UL2018_MiniAODv2-v2/MINIAOD
+signal:
+  BkkToGRadionToGGG_M1-1000_R0-10_2018:
+    FlatAODv3: hadoop:/hadoop/store/user/atownse2/RSTriPhoton/signal/FlatAODv3/BkkToGRadionToGGG_M1-1000_R0-10_2018_FlatAODv3
+    MiniAOD: hadoop:/hadoop/store/user/atownse2/RSTriPhoton/signal/MiniAOD/BkkToGRadionToGGG_M1-1000_R0-10_2018_MiniAOD
+  BkkToGRadionToGGG_M1-1000_R0-1p25_2018:
+    FlatAODv3: hadoop:/hadoop/store/user/atownse2/RSTriPhoton/signal/FlatAODv3/BkkToGRadionToGGG_M1-1000_R0-1p25_2018_FlatAODv3
+    MiniAOD: hadoop:/hadoop/store/user/atownse2/RSTriPhoton/signal/MiniAOD/BkkToGRadionToGGG_M1-1000_R0-1p25_2018_MiniAOD
+  BkkToGRadionToGGG_M1-1000_R0-20_2018:
+    FlatAODv3: hadoop:/hadoop/store/user/atownse2/RSTriPhoton/signal/FlatAODv3/BkkToGRadionToGGG_M1-1000_R0-20_2018_FlatAODv3
+    MiniAOD: hadoop:/hadoop/store/user/atownse2/RSTriPhoton/signal/MiniAOD/BkkToGRadionToGGG_M1-1000_R0-20_2018_MiniAOD
+  BkkToGRadionToGGG_M1-1000_R0-2p5_2018:
+    FlatAODv3: hadoop:/hadoop/store/user/atownse2/RSTriPhoton/signal/FlatAODv3/BkkToGRadionToGGG_M1-1000_R0-2p5_2018_FlatAODv3
+    MiniAOD: hadoop:/hadoop/store/user/atownse2/RSTriPhoton/signal/MiniAOD/BkkToGRadionToGGG_M1-1000_R0-2p5_2018_MiniAOD
+  BkkToGRadionToGGG_M1-1000_R0-5_2018:
+    FlatAODv3: hadoop:/hadoop/store/user/atownse2/RSTriPhoton/signal/FlatAODv3/BkkToGRadionToGGG_M1-1000_R0-5_2018_FlatAODv3
+    MiniAOD: hadoop:/hadoop/store/user/atownse2/RSTriPhoton/signal/MiniAOD/BkkToGRadionToGGG_M1-1000_R0-5_2018_MiniAOD
+  BkkToGRadionToGGG_M1-180_R0-0p225_2018:
+    FlatAODv3: hadoop:/hadoop/store/user/atownse2/RSTriPhoton/signal/FlatAODv3/BkkToGRadionToGGG_M1-180_R0-0p225_2018_FlatAODv3
+    MiniAOD: hadoop:/hadoop/store/user/atownse2/RSTriPhoton/signal/MiniAOD/BkkToGRadionToGGG_M1-180_R0-0p225_2018_MiniAOD
+  BkkToGRadionToGGG_M1-180_R0-0p45_2018:
+    FlatAODv3: hadoop:/hadoop/store/user/atownse2/RSTriPhoton/signal/FlatAODv3/BkkToGRadionToGGG_M1-180_R0-0p45_2018_FlatAODv3
+    MiniAOD: hadoop:/hadoop/store/user/atownse2/RSTriPhoton/signal/MiniAOD/BkkToGRadionToGGG_M1-180_R0-0p45_2018_MiniAOD
+  BkkToGRadionToGGG_M1-180_R0-0p9_2018:
+    FlatAODv3: hadoop:/hadoop/store/user/atownse2/RSTriPhoton/signal/FlatAODv3/BkkToGRadionToGGG_M1-180_R0-0p9_2018_FlatAODv3
+    MiniAOD: hadoop:/hadoop/store/user/atownse2/RSTriPhoton/signal/MiniAOD/BkkToGRadionToGGG_M1-180_R0-0p9_2018_MiniAOD
+  BkkToGRadionToGGG_M1-180_R0-1p8_2018:
+    FlatAODv3: hadoop:/hadoop/store/user/atownse2/RSTriPhoton/signal/FlatAODv3/BkkToGRadionToGGG_M1-180_R0-1p8_2018_FlatAODv3
+    MiniAOD: hadoop:/hadoop/store/user/atownse2/RSTriPhoton/signal/MiniAOD/BkkToGRadionToGGG_M1-180_R0-1p8_2018_MiniAOD
+  BkkToGRadionToGGG_M1-180_R0-3p6_2018:
+    FlatAODv3: hadoop:/hadoop/store/user/atownse2/RSTriPhoton/signal/FlatAODv3/BkkToGRadionToGGG_M1-180_R0-3p6_2018_FlatAODv3
+    MiniAOD: hadoop:/hadoop/store/user/atownse2/RSTriPhoton/signal/MiniAOD/BkkToGRadionToGGG_M1-180_R0-3p6_2018_MiniAOD
+  BkkToGRadionToGGG_M1-250_R0-0p3125_2018:
+    FlatAODv3: hadoop:/hadoop/store/user/atownse2/RSTriPhoton/signal/FlatAODv3/BkkToGRadionToGGG_M1-250_R0-0p3125_2018_FlatAODv3
+    MiniAOD: hadoop:/hadoop/store/user/atownse2/RSTriPhoton/signal/MiniAOD/BkkToGRadionToGGG_M1-250_R0-0p3125_2018_MiniAOD
+  BkkToGRadionToGGG_M1-250_R0-0p625_2018:
+    FlatAODv3: hadoop:/hadoop/store/user/atownse2/RSTriPhoton/signal/FlatAODv3/BkkToGRadionToGGG_M1-250_R0-0p625_2018_FlatAODv3
+    MiniAOD: hadoop:/hadoop/store/user/atownse2/RSTriPhoton/signal/MiniAOD/BkkToGRadionToGGG_M1-250_R0-0p625_2018_MiniAOD
+  BkkToGRadionToGGG_M1-250_R0-1p25_2018:
+    FlatAODv3: hadoop:/hadoop/store/user/atownse2/RSTriPhoton/signal/FlatAODv3/BkkToGRadionToGGG_M1-250_R0-1p25_2018_FlatAODv3
+    MiniAOD: hadoop:/hadoop/store/user/atownse2/RSTriPhoton/signal/MiniAOD/BkkToGRadionToGGG_M1-250_R0-1p25_2018_MiniAOD
+  BkkToGRadionToGGG_M1-250_R0-2p5_2018:
+    FlatAODv3: hadoop:/hadoop/store/user/atownse2/RSTriPhoton/signal/FlatAODv3/BkkToGRadionToGGG_M1-250_R0-2p5_2018_FlatAODv3
+    MiniAOD: hadoop:/hadoop/store/user/atownse2/RSTriPhoton/signal/MiniAOD/BkkToGRadionToGGG_M1-250_R0-2p5_2018_MiniAOD
+  BkkToGRadionToGGG_M1-250_R0-5_2018:
+    FlatAODv3: hadoop:/hadoop/store/user/atownse2/RSTriPhoton/signal/FlatAODv3/BkkToGRadionToGGG_M1-250_R0-5_2018_FlatAODv3
+    MiniAOD: hadoop:/hadoop/store/user/atownse2/RSTriPhoton/signal/MiniAOD/BkkToGRadionToGGG_M1-250_R0-5_2018_MiniAOD
+  BkkToGRadionToGGG_M1-3000_R0-15_2018:
+    FlatAODv3: hadoop:/hadoop/store/user/atownse2/RSTriPhoton/signal/FlatAODv3/BkkToGRadionToGGG_M1-3000_R0-15_2018_FlatAODv3
+    MiniAOD: hadoop:/hadoop/store/user/atownse2/RSTriPhoton/signal/MiniAOD/BkkToGRadionToGGG_M1-3000_R0-15_2018_MiniAOD
+  BkkToGRadionToGGG_M1-3000_R0-30_2018:
+    FlatAODv3: hadoop:/hadoop/store/user/atownse2/RSTriPhoton/signal/FlatAODv3/BkkToGRadionToGGG_M1-3000_R0-30_2018_FlatAODv3
+    MiniAOD: hadoop:/hadoop/store/user/atownse2/RSTriPhoton/signal/MiniAOD/BkkToGRadionToGGG_M1-3000_R0-30_2018_MiniAOD
+  BkkToGRadionToGGG_M1-3000_R0-3p75_2018:
+    FlatAODv3: hadoop:/hadoop/store/user/atownse2/RSTriPhoton/signal/FlatAODv3/BkkToGRadionToGGG_M1-3000_R0-3p75_2018_FlatAODv3
+    MiniAOD: hadoop:/hadoop/store/user/atownse2/RSTriPhoton/signal/MiniAOD/BkkToGRadionToGGG_M1-3000_R0-3p75_2018_MiniAOD
+  BkkToGRadionToGGG_M1-3000_R0-60_2018:
+    FlatAODv3: hadoop:/hadoop/store/user/atownse2/RSTriPhoton/signal/FlatAODv3/BkkToGRadionToGGG_M1-3000_R0-60_2018_FlatAODv3
+    MiniAOD: hadoop:/hadoop/store/user/atownse2/RSTriPhoton/signal/MiniAOD/BkkToGRadionToGGG_M1-3000_R0-60_2018_MiniAOD
+  BkkToGRadionToGGG_M1-3000_R0-7p5_2018:
+    FlatAODv3: hadoop:/hadoop/store/user/atownse2/RSTriPhoton/signal/FlatAODv3/BkkToGRadionToGGG_M1-3000_R0-7p5_2018_FlatAODv3
+    MiniAOD: hadoop:/hadoop/store/user/atownse2/RSTriPhoton/signal/MiniAOD/BkkToGRadionToGGG_M1-3000_R0-7p5_2018_MiniAOD
+  BkkToGRadionToGGG_M1-500_R0-0p625_2018:
+    FlatAODv3: hadoop:/hadoop/store/user/atownse2/RSTriPhoton/signal/FlatAODv3/BkkToGRadionToGGG_M1-500_R0-0p625_2018_FlatAODv3
+    MiniAOD: hadoop:/hadoop/store/user/atownse2/RSTriPhoton/signal/MiniAOD/BkkToGRadionToGGG_M1-500_R0-0p625_2018_MiniAOD
+  BkkToGRadionToGGG_M1-500_R0-10_2018:
+    FlatAODv3: hadoop:/hadoop/store/user/atownse2/RSTriPhoton/signal/FlatAODv3/BkkToGRadionToGGG_M1-500_R0-10_2018_FlatAODv3
+    MiniAOD: hadoop:/hadoop/store/user/atownse2/RSTriPhoton/signal/MiniAOD/BkkToGRadionToGGG_M1-500_R0-10_2018_MiniAOD
+  BkkToGRadionToGGG_M1-500_R0-1p25_2018:
+    FlatAODv3: hadoop:/hadoop/store/user/atownse2/RSTriPhoton/signal/FlatAODv3/BkkToGRadionToGGG_M1-500_R0-1p25_2018_FlatAODv3
+    MiniAOD: hadoop:/hadoop/store/user/atownse2/RSTriPhoton/signal/MiniAOD/BkkToGRadionToGGG_M1-500_R0-1p25_2018_MiniAOD
+  BkkToGRadionToGGG_M1-500_R0-2p5_2018:
+    FlatAODv3: hadoop:/hadoop/store/user/atownse2/RSTriPhoton/signal/FlatAODv3/BkkToGRadionToGGG_M1-500_R0-2p5_2018_FlatAODv3
+    MiniAOD: hadoop:/hadoop/store/user/atownse2/RSTriPhoton/signal/MiniAOD/BkkToGRadionToGGG_M1-500_R0-2p5_2018_MiniAOD
+  BkkToGRadionToGGG_M1-500_R0-5_2018:
+    FlatAODv3: hadoop:/hadoop/store/user/atownse2/RSTriPhoton/signal/FlatAODv3/BkkToGRadionToGGG_M1-500_R0-5_2018_FlatAODv3
+    MiniAOD: hadoop:/hadoop/store/user/atownse2/RSTriPhoton/signal/MiniAOD/BkkToGRadionToGGG_M1-500_R0-5_2018_MiniAOD

@@ -1,5 +1,6 @@
 import numpy as np
-import awkward as ak
+
+import dask_awkward as dak
 
 from coffea.nanoevents.methods import candidate
 
@@ -7,9 +8,16 @@ radion_pdgid = 9000025
 photon_pdgid = 22
 bkk_pdgid = 9000121
 
+photon_mva_cut = {'barrel': {80: 0.42, 90: -0.02},
+                  'endcap': {80: 0.14, 90: -0.26}}
+
+photonID_tags = {1: 'loose',
+                 2: 'medium',
+                 3: 'tight',
+                 0: 'no'}
 
 def get_photons(events):
-    return ak.zip(
+    return dak.zip(
     {
         'energy': events.patpho_energy,
         'pt': events.patpho_pt,
@@ -20,7 +28,7 @@ def get_photons(events):
         'cutBasedId': events.patpho_cutBased,
         #'hasPixelSeed' : events.patpho_hasPixelSeed,
         #'passElectronVeto' : events.patpho_passElectronVeto,
-        'charge': ak.zeros_like(events.patpho_energy),
+        'charge': dak.zeros_like(events.patpho_energy),
     },
         with_name='PtEtaPhiECandidate',
         behavior=candidate.behavior
@@ -31,7 +39,7 @@ def get_diphotons(events):
     if not hasattr(events, 'ruclu_pt'):
         calculate_ruclu_pt(events)
 
-    return ak.zip(
+    return dak.zip(
         {
             'pt': events.ruclu_pt,
             'eta': events.ruclu_eta,
@@ -46,27 +54,27 @@ def get_diphotons(events):
             'isPhoton' : events.ruclu_isPhoton,
             'hasPixelSeed' : events.ruclu_hasPixelSeed,
             'passElectronVeto' : events.ruclu_passElectronVeto,
-            'charge': ak.zeros_like(events.ruclu_energy),
+            'charge': dak.zeros_like(events.ruclu_energy),
         },
             with_name='PtEtaPhiMCandidate',
             behavior=candidate.behavior
         )
 
 def get_jets(events):
-    return ak.zip(
+    return dak.zip(
     {
         'energy': events.jet_energy,
         'pt': events.jet_pt,
         'eta': events.jet_eta,
         'phi': events.jet_phi,
-        'charge': ak.zeros_like(events.jet_energy),
+        'charge': dak.zeros_like(events.jet_energy),
     },
         with_name='PtEtaPhiECandidate',
         behavior=candidate.behavior
     )
 
 def get_gen_particles(events):
-    return ak.zip(
+    return dak.zip(
     {
         'energy': events.genpart_energy,
         'mass' : events.genpart_mass,
@@ -75,48 +83,55 @@ def get_gen_particles(events):
         'phi': events.genpart_phi,
         'pdgId': events.genpart_pdgid,
         'mother_pdgId': events.genpart_motherpdgid,
-        'charge': ak.zeros_like(events.genpart_energy),
+        'charge': dak.zeros_like(events.genpart_energy),
     },
         with_name='PtEtaPhiMCandidate',
         behavior=candidate.behavior
     )
 
-def get_triphoton_candidates(photons, diphotons):
+def get_triphoton_candidates(photons,diphotons):
     """
     Returns all combinations of photons and diphotons for every event.
     """
-    candidates = ak.cartesian( {'photon' : photons,
-                          'diphoton': diphotons})
-    
+    combinations = dak.cartesian( [photons, diphotons])
+
+    candidates = dak.zip({'photon': combinations['0'],
+                          'diphoton': combinations['1']})
+
+    candidates['triphoton'] = candidates.photon + candidates.diphoton    
     candidates['delta_r'] = candidates.photon.delta_r(candidates.diphoton)
     candidates['delta_eta'] = abs(candidates.photon.eta - candidates.diphoton.eta)
-    candidates['triphoton'] = candidates.photon + candidates.diphoton
     candidates['ket_frac'] = candidates.triphoton.pt/candidates.triphoton.energy
-    candidates['mass_ratio'] = candidates.diphoton.mass/candidates.triphoton.mass
+    candidates['alpha'] = candidates.diphoton.mass/candidates.triphoton.mass
 
-    # Sort by lowest ket fraction
-    candidates = candidates[ak.argsort(candidates.ket_frac, ascending=True)]
+    # Sort by diphoton score
+    candidates = candidates[dak.argsort(candidates.diphoton.dipho_score, axis=1, ascending=False)]
 
     return candidates
 
-def deep_matching(obj1, obj2, dr_max=0.1):
-    """Returns a boolean array with same shape as obj1 where 
-    it is true if there is some obj2 within dr_max of obj1."""
-    matching = ak.cartesian({'obj1':obj1, 'obj2':obj2}, nested=True)
-    matching = matching[matching.obj1.delta_r(matching.obj2)<0.1]
+def deep_matching(obj0, obj1, dr_max=0.1):
+    """Returns a boolean array with same shape as obj0 where 
+    it is true if there is some obj1 within dr_max of obj0. Also
+    returns the array of obj1, sorted by the percent difference in pt,
+    that matches the shape of obj0[has_match]."""
+
+    matching = dak.cartesian([obj0, obj1], nested=True)
+    matching = matching[matching['0'].delta_r(matching['1'])<0.1]
+    has_match = dak.num(matching['1'], axis=2) > 0
 
     # Sort axis 2 by the percent difference in pt
-    matching = matching[ak.argsort(abs(matching.obj1.pt - matching.obj2.pt)/matching.obj1.pt, axis=2, ascending=True)]
+    matching = matching[dak.argsort(abs(matching['0'].pt - matching['1'].pt)/matching['0'].pt, axis=2, ascending=True)]
+    matched_obj1 = matching['1'][has_match,0]
 
-    has_match = ak.num(matching.obj2, axis=2) > 0
-    obj2 = matching.obj2[has_match,0]
-
-    return has_match, obj2
-
+    return has_match, matched_obj1
 
 # Functions for calculating kinematic variables
 def calculate_ruclu_pt(events):
-    events['ruclu_pt'] = pt(events.ruclu_energy, events.ruclu_eta, events.pvtx_z[:,0])
+    E = events.ruclu_energy
+    eta = events.ruclu_eta
+    zpv = events.pvtx_z[:,0]
+
+    events['ruclu_pt'] = E*np.sin(2*np.arctan(np.exp(-1*ZShift(eta,zpv))))
 
 def ZShift( eta, zPV):
     R = 129
@@ -126,8 +141,3 @@ def ZShift( eta, zPV):
     thetaprime = np.arctan(R/abs(zprime))
     etaprime = -np.sign(zprime)*np.log(np.tan(thetaprime/2))	  
     return etaprime
-
-def pt(E, eta, zpv):
-    """Calculate the transverse momentum of a particle given its energy, pseudorapidity, and z position of the primary vertex."""
-    pt = E*np.sin(2*np.arctan(np.exp(-1*ZShift(eta,zpv))))
-    return pt

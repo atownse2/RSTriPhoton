@@ -3,8 +3,20 @@ M_BKK=$1
 M_R=$2
 MGDIR=$3
 outpath=$4
+condor=$5
 
 cd $MGDIR
+
+# Deactivate any existing conda environment
+if [ "$condor" = "False" ]
+then
+  source deactivate
+fi
+
+# If source deactivate doesn't work, try:
+# conda init
+# exec bash
+# conda deactivate
 
 fragment="BkkToGRadionToGGG_M1-${M_BKK}_R0-${M_R}"
 
@@ -28,7 +40,7 @@ echo Making gridpacks
 cp ${fragment}_slc7_amd64_gcc10_CMSSW_12_4_8_tarball.tar.xz $outpath
 
 echo Cleaning up...
-# rm -rf ${fragment}*
-# rm -rf $cardsdir/${fragment}*
+rm -rf ${fragment}*
+rm -rf $cardsdir/${fragment}*
 
 echo Done

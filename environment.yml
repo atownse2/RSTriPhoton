@@ -1,12 +1,10 @@
-name: coffea-env
+name: triphoton-env
 channels:
   - conda-forge
 dependencies:
   - python>=3.6
-  - awkward>=2.5.0
-  - ipython
+  - coffea
   - root
-  - sklearn
   - numba
   - htcondor
   - dask
@@ -20,5 +18,4 @@ dependencies:
   - xrootd
   - pyyaml
   - ipywidgets
-  - pip:
-    - coffea>=2023.10.0rc1
+  - ipython

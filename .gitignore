@@ -1,7 +1,7 @@
 AN*
-preprocessing/generateSignal/EXO-MCsampleProductions/
+
 *genproductions/
-preprocessing/processMiniAOD/cache/
+*cache/*
 preprocessing/processMiniAOD/CMSSW*
 test/
 hists/*
@@ -16,3 +16,6 @@ plots/*
 *.root
 *.csv
 *.json
+env.tar.gz
+triphoton-env.tar.gz
+preprocessing/tools/EXO-MCsampleProductions

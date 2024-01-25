@@ -16,14 +16,14 @@ import gzip
 
 from . import histograms as hgm
 
-from ..utils import sample_info as si
-from ..utils.logger import Logger
+from .utils import sample_info as si
+from .utils.logger import Logger
 
 l = Logger()
 
 
 # Define paths
-top_dir = '/afs/crc.nd.edu/user/a/atownse2/Public/RSTriPhoton'
+top_dir = si.top_dir
 out_dir = f'{top_dir}/output'
 
 def get_outputs(dType, 

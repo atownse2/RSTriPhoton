@@ -12,11 +12,10 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 
-top = "/afs/crc.nd.edu/user/a/atownse2/Public/RSTriPhoton"
-sys.path.append(top)
-from analysis.utils import sample_info as si
-from analysis.utils import selections as sel
+from .utils import sample_info as si
+from .utils import selections as sel
 
+top = si.top_dir
 
 # Save signal events into arrays for unbinned fits
 array_dir = top+'/outputs/arrays/preselection/'

@@ -1,98 +1,155 @@
 import sys
 
+from collections import OrderedDict
 
-import awkward as ak
+# import awkward as ak
+import dask_awkward as dak
 
-sys.path.append("../")
-from analysis.utils import sample_info as s
-from analysis import objects as obj
+# sys.path.append("../")
+from .utils import sample_info as s
+from . import objects as obj
 
 from coffea.nanoevents.methods import nanoaod
 from coffea.analysis_tools import PackedSelection
 
-photonID_tags = {1: 'loose',
-                 2: 'medium',
-                 3: 'tight',
-                 0: 'no'}
+analysis_selections = {}
+
+analysis_selections['preselection'] = {
+    'photon_pt' : 60,
+    'photon_ID' : 1, # At least loose ID
+    'diphoton_pt' : 80,
+    'diphoton_score' : 0.1,
+    'delta_r' : 0.1,
+}
+
+analysis_selections['signal'] = analysis_selections['preselection']
+analysis_selections['signal'].update({
+    'ket_ratio' : 0.6, # Just explaining the concept of selection inheritance
+    })
+
+def get_selections(analysis_region, **modified_selections):
+
+    if analysis_region is None:
+        return {}
+    elif analysis_region not in analysis_selections:
+        raise ValueError(f"Analysis region {analysis_region} not recognized.")
+    else:
+        selections = analysis_selections[analysis_region]
+        for key, value in modified_selections.items():
+            selections[key] = value
+        return selections
+
+class Cutflow:
+    def __init__(self):
+        self.cutflow = OrderedDict()
+
+    def __add__(self, other):
+        for key in other.cutflow:
+            if key not in self.cutflow:
+                self.cutflow[key] = 0
+            self.cutflow[key] += other.cutflow[key]
+        return self
+
+    def __getitem__(self, key):
+        if key not in self.cutflow:
+            self.cutflow[key] = 0
+        return self.cutflow[key]
+
+    def __setitem__(self, key, value):
+        self.cutflow[key] = value
+
+    def to_dict(self):
+        return self.cutflow
+    
+    def from_dict(self, cutflow):
+        self.cutflow = cutflow
+
+class ObjectSelection:
+
+    def __init__(self, objects, cutflow):
+
+        self.cutflow = cutflow
+        self.pass_selections = dak.ones_like(objects.pt, dtype=bool)
+    
+    def select(self, selection_name, selection):
+        if selection_name is not None:
+            self.cutflow[selection_name] = dak.sum(dak.num(selection)>0)
+
+        if self.pass_selections is None:
+            self.pass_selections = selection
+        else:
+            self.pass_selections = self.pass_selections & selection
+        
+        return self
 
 class EventSelection:
-    def __init__(self,
-                 events,
-                 trigger_names = ['HLT_DoublePhoton70_v',
-                                  'HLT_DoublePhoton85_v',
-                                  'HLT_Photon200_v'],
-                 photon_pt_cut = 80,
-                 photon_ID_cut = 1, # At least loose ID
-                 diphoton_pt_cut = 80,
-                 diphoton_score_cut = 0.9,
-                 delta_r_cut = 0.15,
-                 ket_frac_max = 0.5,
-                 ):
+
+    def __init__(
+        self,
+        events, 
+        analysis_region,
+        ):
+
+        self.cutflow = Cutflow()
+        self.pass_selections = dak.ones_like(events.run, dtype=bool)
+
+        self.selections = get_selections(analysis_region)
+
+        self.select_events(events)
+        self.calculate_quantities(events)
+
+    def select(self, selection_name, selection):
+        if selection_name is not None:
+            self.cutflow[selection_name] = dak.sum(selection)
+
+        if self.pass_selections is None:
+            self.pass_selections = selection
+        else:
+            self.pass_selections = self.pass_selections & selection
         
-        self.selections = PackedSelection()
-        self.events = events
+        return self
 
-        if isinstance(trigger_names, str):
-            self.trigger_names = [self.trigger_names]
-        elif isinstance(trigger_names, list):
-            self.trigger_names = trigger_names
+    def select_events(self, events):
 
-        # Object selection
-        self.photon_pt_cut = photon_pt_cut
-        self.photon_ID_cut = photon_ID_cut
-
-        self.diphoton_pt_cut = diphoton_pt_cut
-        self.diphoton_score_cut = diphoton_score_cut
+        self.cutflow['total'] = dak.num(events, axis=0)
         
-        # Candidate selection
-        self.delta_r_cut = delta_r_cut
-        self.ket_frac_max = ket_frac_max
+        ## Preselection
+        photons = obj.get_photons(events)
+        photonSelection = ObjectSelection(photons, self.cutflow)
+        if 'photon_pt' in self.selections:
+            pt_cut = self.selections['photon_pt']
+            photonSelection.select(f'photon_pt_{pt_cut}', photons.pt > pt_cut)
+        if 'photon_ID' in self.selections:
+            ID_cut = self.selections['photon_ID']
+            photonSelection.select(f'photon_{obj.photonID_tags[ID_cut]}ID', photons.cutBasedId >= ID_cut)
+        photons = photons[photonSelection.pass_selections]
 
-    def apply_preselections(self):
+        diphotons = obj.get_diphotons(events)
+        diphotonSelection = ObjectSelection(diphotons, self.cutflow).select(None, (diphotons.ruclu_moe > 0))
+        if 'diphoton_pt' in self.selections:
+            pt_cut = self.selections['diphoton_pt']
+            diphotonSelection.select(f'diphoton_pt_{pt_cut}', diphotons.pt > pt_cut)
+        if 'diphoton_score' in self.selections:
+            score_cut = self.selections['diphoton_score']
+            diphotonSelection.select(f'diphoton_score_{score_cut}', diphotons.dipho_score > score_cut)
+        diphotons = diphotons[diphotonSelection.pass_selections]
 
-        # Trigger selection
-        for trigger_name in self.trigger_names:
-            trigger_index = s.trigger_indicies[trigger_name]
-            self.selections.add(trigger_name, self.events.triggers[:,trigger_index]==1)
-        
-        # Object selection
-        photons = obj.get_photons(self.events)
-        diphotons = obj.get_diphotons(self.events)
+        candidates = obj.get_triphoton_candidates(photons, diphotons)
+        candidateSelection = ObjectSelection(candidates.triphoton, self.cutflow).select(None, candidates.triphoton.mass > 0)
+        if 'delta_r' in self.selections:
+            dr_cut = self.selections['delta_r']
+            candidateSelection.select(f'delta_r_{dr_cut}', candidates.delta_r > dr_cut)
+        candidates = candidates[candidateSelection.pass_selections]
 
-        good_photons = (photons.pt > self.photon_pt_cut) & \
-                    (photons.cutBasedId >= self.photon_ID_cut)
-
-        good_diphotons = (diphotons.pt > self.diphoton_pt_cut) & \
-                        (diphotons.ruclu_moe > 0)
-
-        self.selections.add(f'photon_pt{self.photon_pt_cut}_{photonID_tags[self.photon_ID_cut]}ID',
-                      ak.num(good_photons)>0)
-        self.selections.add(f'diphoton_pt{self.diphoton_pt_cut}',
-                      ak.num(good_diphotons)>0)
-
-        # Candidate selection
-        candidates = obj.get_triphoton_candidates(photons[good_photons],
-                                                diphotons[good_diphotons])
-
-        # Delta R preselection cut
-        candidates = candidates[candidates.delta_r > self.delta_r_cut]
-
-        self.selections.add(f'candidate_dr{self.delta_r_cut}', ak.num(candidates)>0)
-
-        candidates = candidates[candidates.ket_frac<self.ket_frac_max]
-        candidates = candidates[ak.argsort(candidates.diphoton.dipho_score, axis=1, ascending=False)]
-        self.selections.add(f'candidate_ket_frac{self.ket_frac_max}', ak.num(candidates)>0)
-
-        # Pass preselection
-        pass_preselection = self.selections.all(*self.selections.names)
-
-        candidates = candidates[pass_preselection]
-        candidate = candidates[:,0]
-        
-        self.events = self.events[pass_preselection]
-
-        # Store candidates in events
-        self.events['candidate'] = candidate
-        self.events.behavior = nanoaod.behavior
+        self.select('candidate_pass', dak.num(candidates) > 0)
 
 
+        ## Other selections ...
+
+
+        ## Store quantities in events
+        events['candidates'] = candidates
+    
+
+    def calculate_quantities(self, events):
+        pass

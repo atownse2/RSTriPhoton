@@ -1,20 +1,22 @@
-import uproot
 import os
-import signal
 import json
 import argparse
 import sys
 
+import signal
+
+import concurrent.futures
+
+USER = os.environ['USER']
 top_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.append(top_dir)
 
-import analysis.utils.sample_info as si
-
-cache_dir = '/afs/crc.nd.edu/user/a/atownse2/Public/RSTriPhoton/preprocessing/cache/'
-condor_dir = '/scratch365/atownse2/condor'
+from preprocessing.utils import tuple_info as ti
+cache_dir = f'{top_dir}/preprocessing/cache/'
+condor_dir = f'/scratch365/{USER}/condor'
 
 # Cache good files with last modified time
-cache_name = cache_dir + 'clean_up_files.json'
+cache_name = cache_dir + 'tuple_info.json'
 
 def clear_condor_logs(jobName):
     logfile = f'{condor_dir}/log/{jobName}.log'
@@ -24,105 +26,118 @@ def clear_condor_logs(jobName):
         if os.path.exists(file):
             os.remove(file)
 
-def get_tuple_dict():
-    if os.path.exists(cache_name):
-        with open(cache_name) as f:
-            tuple_dict = json.load(f)
+def count_events(filepath):
+    '''Returns the number of events in the file'''
+    filename = filepath.split('/')[-1]
+
+    if 'MiniAOD' in filename:
+        tree = 'Events'
     else:
-        tuple_dict = {}
-    return tuple_dict
+        tree = 'flattener/tree'
 
-def write_good_files(good_files,
-                     tuple_version=si.get_tuple_version()):
-    tuple_dict = get_tuple_dict()
-    tuple_dict[tuple_version] = {'signal': good_files}
+    import uproot
+    try:
+        with uproot.open(filepath) as file:
+            return file[tree].num_entries # type: ignore
+    except:
+        return None
 
+def get_good_files():
+    '''Returns a dict of good files'''
+    if not os.path.exists(cache_name):
+        return {}
+
+    with open(cache_name) as f:
+        return json.load(f)
+
+def cache_good_files(good_files):
     with open(cache_name, 'w') as f:
-        json.dump(tuple_dict, f, indent=4)
+        json.dump(good_files, f, indent=4)
 
-def get_good_files( group,
-                    tuple_version=si.get_tuple_version(),
-                    year='2018'
-                    ):
-    tuple_dict = get_tuple_dict()
-    if tuple_version not in tuple_dict:
-        tuple_dict[tuple_version] = {group: {}}
+def run_cleaner(dType, tuple_version, **kwargs):
+    cleaner = FileCleaner()
+    signal.signal(signal.SIGINT, cleaner.signal_handler)
+    cleaner.clean_up_files(dType, tuple_version, **kwargs)
 
-    good_files = {}
-    tuple_dir = si.get_tuple_dir(group, tuple_version=tuple_version, year=year)
-    for file, file_info in tuple_dict[tuple_version][group].items():
-        file_path = tuple_dir + file
-        if os.path.exists(file_path) and os.path.getmtime(file_path) == file_info['last_modified']:
-            good_files[file] = file_info
-    return good_files
+class FileCleaner:
+    def __init__(self):
+        self.good_files = get_good_files()
+    
+    def signal_handler(self, sig, frame):
+        print('Exiting, saving good files')
+        cache_good_files(self.good_files)
+        sys.exit(0)
 
-def clean_up_files(group,
-                   year='2018',
-                   tuple_version=si.get_tuple_version(),
-                   test=False):
-    if tuple_version == 'MiniAOD':
-        branch = 'Events'
-    else:
-        branch = 'flattener/tree'
+    def check_file(self, filepath, file_dict, ask_delete=True):
+        file = filepath.split('/')[-1]
+        last_modified = os.path.getmtime(filepath)
+        if file in file_dict and last_modified == file_dict[file]['last_modified']:
+            return None
 
-    # Check if tuple dir exists
-    if group != 'data' and group != 'signal':
-        group = 'mc'
+        n_events = count_events(filepath)
+        if n_events == None:
+            if ask_delete:
+                input(f'Error opening {filepath}. Press enter to delete it.')
+            os.remove(file)
+            return None
+    
+        # Clear condor logs and update file info
+        clear_condor_logs(file.replace('.root', ''))
+        file_info = {'n_events': n_events,
+                    'last_modified': last_modified}
+        return file_info
+        
+    def clean_up_files(self,
+            dType,
+            tuple_version,
+            datasets=None, # For cleaning datasets not in samples.yml
+            ask_delete=True,
+            test=False):
 
-    tuple_dir = si.get_tuple_dir(group, tuple_version=tuple_version, year=year)
-    if not os.path.exists(tuple_dir):
-        print(f'Tuple dir does not exist: {tuple_dir}')
-        exit(1)
+        # Check if tuple dir exists
+        tuple_dir = ti.get_tuple_dir(dType, tuple_version)
+        if not os.path.exists(tuple_dir):
+            print(f'Tuple dir does not exist: {tuple_dir}')
+            exit(1)
 
-    good_files = get_good_files(group, tuple_version=tuple_version, year=year)
+        if dType not in self.good_files:
+            self.good_files[dType] = {}
 
-    # Get list of files
-    filelist = [f for f in os.listdir(tuple_dir)]
+        if datasets is None:
+            datasets = ti.get_datasets(dType)
 
-    for i, f in enumerate(filelist):
-        file = tuple_dir + f
-        if f in good_files and os.path.getmtime(file) == good_files[f]['last_modified']:
-            continue
-        try:
-            print(f'Checking file {i+1}/{len(filelist)}')
+        for dataset in datasets:
+            print(f'Checking {dataset}')
+            if dataset not in self.good_files[dType]:
+                self.good_files[dType][dataset] = {}
+            if tuple_version not in self.good_files[dType][dataset]:
+                self.good_files[dType][dataset][tuple_version] = {'files': {}}
 
-            open_file = uproot.open(file)
+            tuple_info = self.good_files[dType][dataset][tuple_version]
 
-            if len(open_file.keys()) == 0:
-                print(f'File {file} has no branches')
-                if test:
-                    break
-                else:
-                    os.remove(file)
-                    continue
-            elif open_file[branch].num_entries <= 10:
-                print(f'File {file} has 10 or less events')
-                if test:
-                    break
+            file_dict = tuple_info['files']
+            all_files = [f for f in os.listdir(tuple_dir) if dataset in f]
 
-            else:
-                file_info = {'n_events': open_file[branch].num_entries,
-                             'last_modified': os.path.getmtime(file)}
-                good_files[f] = file_info
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                futures = [executor.submit(self.check_file, f'{tuple_dir}/{file}', file_dict, ask_delete) for file in all_files]
+                for future, file in zip(concurrent.futures.as_completed(futures), all_files):
+                    file_info = future.result()
+                    if file_info is not None:
+                        file_dict[file] = file_info
+                        print(f'Added {file} to good files with {file_info["n_events"]} events')
 
-        except Exception as e:
-            print(f'Error processing file {file}: {str(e)}')
+            tuple_info['n_files'] = len(file_dict.keys())
+            tuple_info['n_events'] = sum([info['n_events'] for info in file_dict.values()])
+            tuple_info['files'] = file_dict
 
-    for file in filelist:
-        if file in good_files:
-            clear_condor_logs(file.replace('.root',''))
-        else:
-            print(f'File {file} is not good')
-            if not test:
-                os.remove(tuple_dir + file)
+            self.good_files[dType][dataset][tuple_version] = tuple_info
 
-    write_good_files(good_files, tuple_version=tuple_version)
+        cache_good_files(self.good_files)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('group', type=str, help='data, signal, or mc')
-    parser.add_argument('--year', '-y', type=str, default='2018', help='year')
-    parser.add_argument('--tuple_version', '-v', default=si.get_tuple_version(), type=str, help='tuple version')
+    parser.add_argument('dType', type=str, help='data, signal, or GJets')
+    parser.add_argument('tuple_version', type=str, help='tuple version')
     parser.add_argument('--test', '-t', action='store_true', help='test mode')
     parser.add_argument('--delete_cache', action='store_true', help='delete cache')
     args = parser.parse_args()
@@ -130,4 +145,4 @@ if __name__ == "__main__":
     if args.delete_cache:
         os.remove(cache_name)
     
-    clean_up_files(args.group, args.year, args.tuple_version, args.test)
+    run_cleaner(args.dType, args.tuple_version, test=args.test)
