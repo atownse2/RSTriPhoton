@@ -25,7 +25,6 @@ l = logger.Logger()
 
 def skim(
         dType, analysis_region,
-        years=["2018"],
         scaleout=None, # "DaskVine" or None
         storage="vast", # "vast" or "hadoop"
         verbosity=0,
@@ -35,7 +34,7 @@ def skim(
     l.set_max_verbosity(verbosity)
 
     # Get fileset
-    fileset = si.get_filesets(dType, years=years, storage=storage)
+    fileset = si.get_filesets(dType, storage=storage)
 
     if test: # Only run over one file per dataset
         fileset = {d: {'files': dd['files'][:1]} for d, dd in fileset.items()}
@@ -64,7 +63,7 @@ def skim(
     else:
         raise ValueError("Invalid scheduler")
 
-    write_outputs(outputs, analysis_region, year)
+    write_outputs(outputs, analysis_region)
 
 def get_output_filenames(dataset, analysis_region, extension):
     return f"{top_dir}/outputs/{dataset}_{analysis_region}.{extension}"
@@ -91,28 +90,28 @@ class NumpyEncoder(json.JSONEncoder):
             return int(obj)
         return super().default(obj)
 
-def write_outputs(outputs, analysis_region, year):
+def write_outputs(outputs, analysis_region):
     for dataset, output in outputs.items():
         if output['events'] is not None:
-            fout = get_output_filenames(dataset, analysis_region, year, 'parquet')
+            fout = get_output_filenames(dataset, analysis_region, 'parquet')
             ak.to_parquet(output['events'], fout)
         if output['cutflow'] is not None:
-            fout = get_output_filenames(dataset, analysis_region, year, 'json')
+            fout = get_output_filenames(dataset, analysis_region, 'json')
             with open(fout, 'w') as f:
                 json.dump(output['cutflow'], f, cls=NumpyEncoder, indent=4)
 
-def load_outputs(dType, analysis_region, year, scale_mc=False):
+def load_outputs(dataset, analysis_region, scale_mc=False):
     '''Load outputs from file'''
     
-    datasets = si.get_datasets(dType)
+    dType = si.get_dType(dataset)
 
-    parquet_file = get_output_filenames(dType, analysis_region, year, "parquet")
-    json_file = get_output_filenames(dType, analysis_region, year, "json")
+    parquet_file = get_output_filenames(dataset, analysis_region, "parquet")
+    json_file = get_output_filenames(dataset, analysis_region, "json")
     if not os.path.exists(parquet_file) or not os.path.exists(json_file):
         # Get input
-        do_skims = input(f"Skims for {dType} {analysis_region} {year} do not exist. Do you want to run skims? (y/n) ")
+        do_skims = input(f"Skims for {dataset} {analysis_region} do not exist. Do you want to run skims? (y/n) ")
         if do_skims == "y":
-            skim(dType, analysis_region, year)
+            skim(dType, analysis_region)
         else:
             return None, None
     

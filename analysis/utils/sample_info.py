@@ -40,6 +40,20 @@ def get_dType(dataset):
         if dataset in datasets:
             return dType
 
+# def get_dataset(dType, era, signal_point=None):
+#     '''Returns the dataset for the given dType and year'''
+
+#     if dType == 'signal':
+#         assert signal_point != None, 'Must specify signal point for signal dataset'
+
+#     sample_info = get_sample_info()
+#     for dataset in sample_info[dType].keys():
+#         if dType == 'signal' and 
+#         if era in dataset:
+#             return dataset
+    
+
+
 def get_datasets(dType):
     '''Returns a list of datasets for the given dType'''
     sample_info = get_sample_info()
@@ -76,7 +90,7 @@ def list_dir(access):
     elif access_method == 'hadoop':
         return xrd_list_dir(file_dir.replace("/hadoop",""), hadoop_redirector)
     elif access_method == 'das':
-        return das_list_dir(path)
+        return [nd_redirector+f for f in das_list_dir(path)]
 
 def get_filelist(
         dataset_or_dType,

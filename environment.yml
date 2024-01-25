@@ -16,6 +16,7 @@ dependencies:
   - dill
   - pyarrow
   - xrootd
+  - fsspec-xrootd
   - pyyaml
   - ipywidgets
   - ipython
